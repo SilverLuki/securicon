@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin — Securicon 11 Bingo</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;900&family=Exo+2:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #04070f; --panel: #080e1e; --surface: #0d1630;
+  --border: #1a2a50; --accent: #3b9eff; --accent2: #7c6ff7;
+  --glow: #3b9eff33; --text: #dde8f5; --muted: #556080;
+  --success: #2dd4a0; --danger: #f06f6f; --warn: #f5b942;
+}
+html, body { font-family: 'Exo 2', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: 0;
+  background: radial-gradient(ellipse 100% 60% at 50% -5%, #1a3a7a28, transparent 65%);
+  pointer-events: none;
+}
+#app { position: relative; z-index: 1; }
+.screen { display: none; min-height: 100vh; }
+.screen.active { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 20px; }
+
+.brand { text-align: center; margin-bottom: 36px; }
+.brand-logo { width: 72px; height: 72px; border-radius: 50%; border: 2px solid var(--warn); box-shadow: 0 0 24px #f5b94233; overflow: hidden; background: #081020; margin: 0 auto 12px; }
+.brand-logo img { width: 100%; height: 100%; object-fit: cover; }
+.brand-name { font-family: 'Orbitron', monospace; font-size: 20px; font-weight: 900; letter-spacing: 5px; background: linear-gradient(135deg, var(--warn), #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.brand-sub { font-size: 11px; color: var(--muted); letter-spacing: 3px; margin-top: 4px; }
+
+.card { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 28px 24px; width: 100%; max-width: 480px; box-shadow: 0 12px 48px #00000070; }
+.card-title { font-family: 'Orbitron', monospace; font-size: 11px; letter-spacing: 3px; color: var(--warn); text-transform: uppercase; margin-bottom: 20px; }
+
+.reconnect-banner { background: #1a3a1a; border: 1px solid var(--success); border-radius: 10px; padding: 16px; margin-bottom: 20px; text-align: center; width: 100%; max-width: 480px; }
+.reconnect-banner-title { font-family: 'Orbitron', monospace; font-size: 11px; letter-spacing: 2px; color: var(--success); margin-bottom: 6px; }
+.reconnect-banner-sub { font-size: 14px; color: var(--text); margin-bottom: 14px; }
+.reconnect-btns { display: flex; gap: 10px; }
+.reconnect-btns .btn { flex: 1; }
+
+label { display: block; font-size: 11px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+input[type=text] { width: 100%; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-family: 'Exo 2', sans-serif; font-size: 18px; outline: none; margin-bottom: 20px; transition: border-color .2s, box-shadow .2s; }
+input[type=text]:focus { border-color: var(--warn); box-shadow: 0 0 0 3px #f5b94222; }
+.btn { width: 100%; padding: 15px; border: none; border-radius: 10px; font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700; letter-spacing: 2px; cursor: pointer; transition: all .15s; }
+.btn-primary { background: linear-gradient(135deg, #7c1d1d, #9f1239); color: #fecdd3; }
+.btn-primary:hover { opacity: .9; }
+.btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); margin-top: 12px; }
+.btn-ghost:active { background: var(--surface); }
+.btn-danger { background: #4a0f0f; color: var(--danger); border: 1px solid var(--danger); }
+.btn-success { background: #064e3b; color: var(--success); border: 1px solid var(--success); }
+.btn-sm { padding: 12px; font-size: 11px; }
+.err { color: var(--danger); font-size: 13px; margin-top: -12px; margin-bottom: 16px; display: none; }
+.err.show { display: block; }
+
+/* ── Admin Panel ── */
+#adminPanel { justify-content: flex-start; padding: 20px; }
+.admin-wrap { width: 100%; max-width: 600px; }
+.admin-header { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+.admin-header img { width: 44px; height: 44px; border-radius: 50%; border: 2px solid var(--warn); }
+.admin-header-title { font-family: 'Orbitron', monospace; font-size: 13px; color: var(--warn); letter-spacing: 2px; }
+.admin-header-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+.code-box { background: var(--surface); border: 2px solid var(--accent); border-radius: 14px; padding: 20px; text-align: center; margin-bottom: 24px; box-shadow: 0 0 30px var(--glow); }
+.code-box-label { font-size: 11px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; }
+.code-value { font-family: 'Orbitron', monospace; font-size: 44px; font-weight: 900; letter-spacing: 10px; color: var(--accent); text-shadow: 0 0 24px var(--accent); }
+.code-url { font-size: 13px; color: var(--muted); margin-top: 8px; }
+
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+.stat { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px; text-align: center; }
+.stat-n { font-family: 'Orbitron', monospace; font-size: 28px; color: var(--accent); }
+.stat-l { font-size: 10px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+
+.section-title { font-family: 'Orbitron', monospace; font-size: 10px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; margin-bottom: 12px; }
+.lb-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 20px; }
+.lb-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--surface); font-size: 15px; }
+.lb-row:last-child { border-bottom: none; }
+.lb-rank { font-family: 'Orbitron', monospace; font-size: 11px; color: var(--muted); width: 22px; }
+.lb-name { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-done-name { color: var(--success); }
+.lb-bar-track { width: 80px; height: 5px; background: var(--surface); border-radius: 3px; overflow: hidden; }
+.lb-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); transition: width .4s; }
+.lb-score { font-family: 'Orbitron', monospace; font-size: 11px; color: var(--accent); width: 32px; text-align: right; }
+
+.log-panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 20px; max-height: 180px; overflow-y: auto; }
+.log-entry { font-size: 13px; color: var(--muted); padding: 5px 0; border-bottom: 1px solid var(--surface); }
+.log-entry:last-child { border-bottom: none; }
+.log-entry .log-time { color: var(--accent); font-family: 'Orbitron', monospace; font-size: 10px; }
+.log-entry.log-important { color: var(--warn); }
+
+.admin-actions { display: flex; gap: 12px; }
+.admin-actions .btn { flex: 1; }
+
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 13px 22px; font-size: 14px; font-weight: 600; color: var(--text); box-shadow: 0 4px 28px #00000080; z-index: 200; white-space: nowrap; animation: toastIn .3s ease; pointer-events: none; }
+.toast.hidden { display: none; }
+@keyframes toastIn { from { transform: translateX(-50%) translateY(20px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ══ ADMIN LOGIN ══ -->
+<div class="screen active" id="adminLogin">
+  <div class="brand">
+    <div class="brand-logo"><img src="/logo.jpg" alt="SEC"></div>
+    <div class="brand-name">SECURICON</div>
+    <div class="brand-sub">Admin Panel &middot; Restricted</div>
+  </div>
+
+  <!-- Reconnect banner -->
+  <div class="reconnect-banner" id="reconnectBanner" style="display:none;">
+    <div class="reconnect-banner-title">Active Session Found</div>
+    <div class="reconnect-banner-sub">Rejoin as admin for room <strong id="reconnectCode"></strong>?</div>
+    <div class="reconnect-btns">
+      <button class="btn btn-ghost btn-sm" onclick="clearAdminSession()">New Room</button>
+      <button class="btn btn-success btn-sm" onclick="doAdminReconnect()">Rejoin</button>
+    </div>
+  </div>
+
+  <div class="card" id="loginCard">
+    <div class="card-title">Create Game Room</div>
+    <label for="adminNameInput">Admin Name</label>
+    <input type="text" id="adminNameInput" placeholder="e.g. Organizer">
+    <div class="err" id="adminErr"></div>
+    <button class="btn btn-primary" onclick="createRoom()">Launch Game Room</button>
+  </div>
+</div>
+
+<!-- ══ ADMIN PANEL ══ -->
+<div class="screen" id="adminPanel">
+  <div class="admin-wrap">
+    <div class="admin-header">
+      <img src="/logo.jpg" alt="SEC">
+      <div>
+        <div class="admin-header-title">Admin Panel</div>
+        <div class="admin-header-sub">Securicon 11 &middot; Human Bingo</div>
+      </div>
+    </div>
+
+    <div class="code-box">
+      <div class="code-box-label">Share this code with players</div>
+      <div class="code-value" id="codeDisplay">——</div>
+      <div class="code-url" id="codeUrl"></div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat"><div class="stat-n" id="statCount">0</div><div class="stat-l">Players</div></div>
+      <div class="stat"><div class="stat-n" id="statLeader">—</div><div class="stat-l">Top Score</div></div>
+      <div class="stat"><div class="stat-n" id="statWinner">—</div><div class="stat-l">Winner</div></div>
+    </div>
+
+    <div class="section-title">Live Leaderboard</div>
+    <div class="lb-panel" id="adminLb">
+      <div style="color:var(--muted);font-size:14px">Waiting for players...</div>
+    </div>
+
+    <div class="section-title">Activity Log</div>
+    <div class="log-panel" id="logPanel"></div>
+
+    <div class="admin-actions">
+      <button class="btn btn-danger" onclick="resetGame()">Reset Game</button>
+    </div>
+  </div>
+</div>
+
+</div>
+<div class="toast hidden" id="toast"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+let roomCode = '';
+let adminName = '';
+
+// ── Session ──────────────────────────────────────────────────────────────────
+function saveAdminSession(code, name) {
+  sessionStorage.setItem('admin_code', code);
+  sessionStorage.setItem('admin_name', name);
+}
+function clearAdminSession() {
+  sessionStorage.removeItem('admin_code');
+  sessionStorage.removeItem('admin_name');
+  document.getElementById('reconnectBanner').style.display = 'none';
+  document.getElementById('loginCard').style.display = 'block';
+}
+function getAdminSession() {
+  const code = sessionStorage.getItem('admin_code');
+  const name = sessionStorage.getItem('admin_name');
+  return (code && name) ? { code, name } : null;
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast'); el.textContent = msg; el.classList.remove('hidden');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.add('hidden'), 3500);
+}
+
+function addLog(msg, important = false) {
+  const panel = document.getElementById('logPanel');
+  const now = new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const entry = document.createElement('div');
+  entry.className = 'log-entry' + (important ? ' log-important' : '');
+  entry.innerHTML = `<span class="log-time">${now}</span> — ${msg}`;
+  panel.insertBefore(entry, panel.firstChild);
+}
+
+function showErr(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.classList.add('show'); }
+function clearErr(id) { document.getElementById(id).classList.remove('show'); }
+
+function setPanel(code) {
+  roomCode = code;
+  document.getElementById('codeDisplay').textContent = code;
+  document.getElementById('codeUrl').textContent = window.location.origin + '  (Players go here)';
+  showScreen('adminPanel');
+}
+
+// ── On load: check session ───────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  const session = getAdminSession();
+  if (session) {
+    document.getElementById('reconnectCode').textContent = session.code;
+    document.getElementById('reconnectBanner').style.display = 'block';
+    document.getElementById('loginCard').style.display = 'none';
+  }
+});
+
+function doAdminReconnect() {
+  const session = getAdminSession();
+  if (!session) return;
+  socket.emit('admin_reconnect', { code: session.code, adminName: session.name }, (res) => {
+    if (res.error) {
+      toast('Could not rejoin: ' + res.error);
+      clearAdminSession();
+      document.getElementById('loginCard').style.display = 'block';
+      return;
+    }
+    adminName = session.name;
+    setPanel(session.code);
+    renderLeaderboard(res.leaderboard);
+    document.getElementById('statCount').textContent = res.playerCount;
+    if (res.winner) document.getElementById('statWinner').textContent = res.winner;
+    addLog('Admin reconnected to room ' + session.code);
+    toast('Reconnected to room ' + session.code);
+  });
+}
+
+// ── Create Room ──────────────────────────────────────────────────────────────
+function createRoom() {
+  const name = document.getElementById('adminNameInput').value.trim();
+  clearErr('adminErr');
+  if (!name) return showErr('adminErr', 'Enter your name.');
+  adminName = name;
+  socket.emit('create_room', { adminName: name }, (res) => {
+    saveAdminSession(res.code, name);
+    setPanel(res.code);
+    addLog('Room ' + res.code + ' created.');
+  });
+}
+
+function resetGame() {
+  if (!confirm('Reset the game for ALL players? Cards will be reshuffled and confirm limits reset.')) return;
+  socket.emit('admin_reset');
+  document.getElementById('statWinner').textContent = '—';
+  addLog('Game reset by admin.', true);
+  toast('Game reset!');
+}
+
+// ── Leaderboard ──────────────────────────────────────────────────────────────
+function renderLeaderboard(data) {
+  const el = document.getElementById('adminLb');
+  if (!data || !data.length) { el.innerHTML = '<div style="color:var(--muted);font-size:14px">Waiting for players...</div>'; return; }
+  el.innerHTML = data.slice(0, 20).map((p, i) => `
+    <div class="lb-row">
+      <div class="lb-rank">#${i+1}</div>
+      <div class="lb-name ${p.done ? 'lb-done-name' : ''}">${p.name}${p.done ? ' ✓' : ''}</div>
+      <div class="lb-bar-track"><div class="lb-bar-fill" style="width:${Math.round((p.filled/25)*100)}%"></div></div>
+      <div class="lb-score">${p.filled}/25</div>
+    </div>
+  `).join('');
+  if (data[0]) document.getElementById('statLeader').textContent = data[0].filled + '/25';
+}
+
+// ── Socket Events ─────────────────────────────────────────────────────────────
+socket.on('player_joined', ({ name, total }) => {
+  document.getElementById('statCount').textContent = total;
+  addLog(name + ' joined. (' + total + ' total)');
+  toast(name + ' joined!');
+});
+socket.on('player_disconnected', ({ name }) => { addLog(name + ' disconnected (may reconnect).'); });
+socket.on('game_won', ({ winner }) => {
+  document.getElementById('statWinner').textContent = winner;
+  addLog('*** ' + winner + ' WON THE GAME! ***', true);
+  toast(winner + ' completed the full board!');
+});
+socket.on('leaderboard', renderLeaderboard);
+socket.on('game_reset', () => { addLog('Game was reset.'); });
+
+// Auto-rejoin on network drop
+socket.on('connect', () => {
+  if (roomCode && adminName) {
+    socket.emit('admin_reconnect', { code: roomCode, adminName }, (res) => {
+      if (res && res.ok) toast('Reconnected.');
+    });
+  }
+});
+
+document.getElementById('adminNameInput').addEventListener('keydown', e => { if (e.key === 'Enter') createRoom(); });
+</script>
+</body>
+</html>

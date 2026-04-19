@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>Securicon 11 — Human Bingo</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;900&family=Exo+2:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #04070f; --panel: #080e1e; --surface: #0d1630;
+  --border: #1a2a50; --accent: #3b9eff; --accent2: #7c6ff7;
+  --glow: #3b9eff33; --text: #dde8f5; --muted: #556080;
+  --success: #2dd4a0; --danger: #f06f6f; --warn: #f5b942;
+}
+html, body {
+  height: 100%; font-family: 'Exo 2', sans-serif;
+  background: var(--bg); color: var(--text);
+  font-size: 16px; -webkit-tap-highlight-color: transparent;
+}
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: 0;
+  background: radial-gradient(ellipse 100% 60% at 50% -5%, #1a3a7a28, transparent 65%);
+  pointer-events: none;
+}
+#app { position: relative; z-index: 1; min-height: 100%; }
+
+.screen { display: none; min-height: 100vh; }
+.screen.active { display: flex; flex-direction: column; }
+
+/* ── JOIN SCREEN ── */
+#joinScreen { align-items: center; justify-content: center; padding: 24px 20px; }
+.brand { display: flex; flex-direction: column; align-items: center; margin-bottom: 36px; gap: 10px; }
+.brand-logo {
+  width: 80px; height: 80px; border-radius: 50%;
+  border: 2px solid var(--accent); box-shadow: 0 0 28px var(--glow);
+  overflow: hidden; background: #081020;
+}
+.brand-logo img { width: 100%; height: 100%; object-fit: cover; }
+.brand-name {
+  font-family: 'Orbitron', monospace; font-size: 22px; font-weight: 900;
+  letter-spacing: 5px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.brand-sub { font-size: 11px; color: var(--muted); letter-spacing: 3px; text-transform: uppercase; }
+
+.join-card {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 16px; padding: 28px 24px;
+  width: 100%; max-width: 400px;
+  box-shadow: 0 12px 48px #00000070;
+}
+.join-card-title {
+  font-family: 'Orbitron', monospace; font-size: 11px;
+  letter-spacing: 3px; color: var(--accent); text-transform: uppercase; margin-bottom: 24px;
+}
+label { display: block; font-size: 11px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; }
+input[type=text] {
+  width: 100%; padding: 15px 16px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--text);
+  font-family: 'Exo 2', sans-serif; font-size: 18px;
+  outline: none; margin-bottom: 20px;
+  transition: border-color .2s, box-shadow .2s;
+}
+input[type=text]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--glow); }
+#roomCodeInput {
+  font-family: 'Orbitron', monospace; font-size: 22px;
+  letter-spacing: 6px; text-align: center; text-transform: uppercase;
+}
+.btn {
+  width: 100%; padding: 16px; border: none; border-radius: 10px;
+  font-family: 'Orbitron', monospace; font-size: 12px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase; cursor: pointer;
+  transition: all .15s; margin-top: 4px;
+}
+.btn-primary { background: linear-gradient(135deg, #1a56cc, #4f46e5); color: #fff; box-shadow: 0 4px 24px #1a56cc44; }
+.btn-primary:active { transform: scale(.98); }
+.btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); margin-top: 12px; }
+.btn-ghost:active { background: var(--surface); }
+.btn-success { background: #064e3b; color: var(--success); border: 1px solid var(--success); }
+.btn-deny { background: #4a1010; color: var(--danger); border: 1px solid var(--danger); }
+.btn-sm { padding: 13px; font-size: 11px; }
+.err { color: var(--danger); font-size: 13px; margin-top: -12px; margin-bottom: 16px; display: none; }
+.err.show { display: block; }
+
+/* ── RECONNECT BANNER ── */
+.reconnect-banner {
+  background: #1a3a1a; border: 1px solid var(--success);
+  border-radius: 10px; padding: 16px; margin-bottom: 20px; text-align: center;
+}
+.reconnect-banner-title { font-family: 'Orbitron', monospace; font-size: 11px; letter-spacing: 2px; color: var(--success); margin-bottom: 6px; }
+.reconnect-banner-sub { font-size: 14px; color: var(--text); margin-bottom: 14px; }
+.reconnect-btns { display: flex; gap: 10px; }
+.reconnect-btns .btn { flex: 1; }
+
+/* ── GAME SCREEN ── */
+#gameScreen { padding: 0; align-items: stretch; justify-content: flex-start; }
+.game-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 10;
+}
+.topbar-left { display: flex; align-items: center; gap: 10px; }
+.topbar-logo { width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--accent); overflow: hidden; }
+.topbar-logo img { width: 100%; height: 100%; object-fit: cover; }
+.topbar-title { font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--accent); }
+.topbar-player { font-size: 13px; color: var(--muted); max-width: 130px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.topbar-player strong { color: var(--text); }
+
+.progress-wrap { padding: 12px 16px 0; }
+.progress-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.progress-count { font-family: 'Orbitron', monospace; font-size: 14px; color: var(--accent); }
+.progress-pct { font-size: 13px; color: var(--muted); }
+.progress-track { height: 6px; background: var(--surface); border-radius: 3px; overflow: hidden; border: 1px solid var(--border); }
+.progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 3px; transition: width .4s ease; }
+
+/* ── GRID ── */
+.grid-wrap { padding: 12px 10px; }
+.bingo-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; }
+.cell {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 8px; aspect-ratio: 1 / 1.1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 5px 3px; text-align: center; cursor: pointer;
+  transition: border-color .15s, background .15s, transform .1s;
+  position: relative; user-select: none;
+}
+.cell:active:not(.cell-filled):not(.cell-free):not(.cell-waiting) { transform: scale(.95); }
+.cell-text { font-size: clamp(8px, 2.3vw, 11px); font-weight: 600; line-height: 1.3; color: var(--muted); }
+.cell-free { background: linear-gradient(135deg, #102050, #1a1560); border-color: var(--accent2); cursor: default; }
+.cell-free .cell-text { color: var(--accent2); font-weight: 700; }
+.cell-filled { background: linear-gradient(135deg, #0c3060, #101450); border-color: var(--accent); box-shadow: inset 0 0 12px #3b9eff18; cursor: default; }
+.cell-filled .cell-text { color: var(--accent); }
+.cell-filled::after { content: '✓'; position: absolute; top: 3px; right: 5px; font-size: 10px; color: var(--success); }
+.cell:not(.cell-filled):not(.cell-free):not(.cell-waiting):hover { border-color: #2a4a80; background: #0a1828; }
+.cell-waiting { border-color: var(--warn) !important; box-shadow: 0 0 8px #f5b94230 !important; cursor: default; }
+.cell-waiting .cell-text { color: var(--warn) !important; }
+.cell-waiting::after { content: '...'; position: absolute; top: 3px; right: 5px; font-size: 10px; color: var(--warn); }
+
+/* ── LEADERBOARD ── */
+.lb-wrap { margin: 0 10px 20px; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+.lb-header { font-family: 'Orbitron', monospace; font-size: 10px; letter-spacing: 3px; color: var(--muted); text-transform: uppercase; margin-bottom: 14px; }
+.lb-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #0d1630; font-size: 15px; }
+.lb-row:last-child { border-bottom: none; }
+.lb-rank { font-family: 'Orbitron', monospace; font-size: 11px; color: var(--muted); width: 22px; }
+.lb-name { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lb-name.me { color: var(--accent); }
+.lb-name.done-name { color: var(--success); }
+.lb-bar-track { width: 70px; height: 5px; background: var(--surface); border-radius: 3px; overflow: hidden; }
+.lb-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 3px; transition: width .4s; }
+.lb-score { font-family: 'Orbitron', monospace; font-size: 11px; color: var(--accent); width: 32px; text-align: right; }
+
+/* ── SHEETS ── */
+.overlay { position: fixed; inset: 0; z-index: 50; background: #000000b0; backdrop-filter: blur(4px); display: flex; align-items: flex-end; }
+.overlay.hidden { display: none; }
+.sheet {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 20px 20px 0 0; padding: 24px 20px 36px;
+  width: 100%; box-shadow: 0 -8px 40px #00000090;
+  animation: slideUp .25s ease;
+}
+@keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.sheet-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+.sheet-title { font-family: 'Orbitron', monospace; font-size: 12px; letter-spacing: 2px; color: var(--accent); text-transform: uppercase; margin-bottom: 6px; }
+.sheet-activity { font-size: 17px; font-weight: 700; color: var(--text); margin-bottom: 20px; line-height: 1.4; }
+.sheet-btns { display: flex; gap: 10px; }
+.sheet-btns .btn { flex: 1; }
+.limit-notice { font-size: 12px; color: var(--warn); margin-bottom: 12px; padding: 8px 12px; background: #1a1200; border-radius: 6px; border: 1px solid #3a2800; }
+
+.req-from { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+.req-from strong { color: var(--text); }
+.req-activity-box { background: var(--surface); border-radius: 10px; padding: 16px; margin-bottom: 8px; font-size: 17px; font-weight: 700; line-height: 1.4; border-left: 3px solid var(--accent); }
+.req-confirm-count { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+  padding: 13px 22px; font-size: 14px; font-weight: 600; color: var(--text);
+  box-shadow: 0 4px 28px #00000080; z-index: 200;
+  max-width: 90vw; text-align: center; line-height: 1.4;
+  animation: toastIn .3s ease; pointer-events: none;
+}
+.toast.hidden { display: none; }
+@keyframes toastIn { from { transform: translateX(-50%) translateY(20px); opacity: 0; } to { transform: translateX(-50%) translateY(0); opacity: 1; } }
+
+/* ── WIN ── */
+.win-screen {
+  position: fixed; inset: 0; z-index: 100; background: #000000e0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 30px;
+}
+.win-screen.hidden { display: none; }
+.win-icon { font-size: 72px; margin-bottom: 16px; animation: winBounce 1s infinite; }
+@keyframes winBounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-18px); } }
+.win-title { font-family: 'Orbitron', monospace; font-size: 40px; font-weight: 900; color: var(--warn); letter-spacing: 4px; margin-bottom: 10px; }
+.win-name { font-family: 'Orbitron', monospace; font-size: 22px; color: var(--accent); margin-bottom: 8px; }
+.win-sub { color: var(--muted); font-size: 15px; margin-bottom: 30px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- ══ JOIN SCREEN ══ -->
+<div class="screen active" id="joinScreen">
+  <div class="brand">
+    <div class="brand-logo"><img src="/logo.jpg" alt="SEC"></div>
+    <div class="brand-name">SECURICON</div>
+    <div class="brand-sub">11th Edition &middot; Human Bingo</div>
+  </div>
+
+  <!-- Reconnect banner (hidden until session found) -->
+  <div class="reconnect-banner" id="reconnectBanner" style="display:none; width:100%; max-width:400px; margin-bottom:20px;">
+    <div class="reconnect-banner-title">Session Found</div>
+    <div class="reconnect-banner-sub">Welcome back, <strong id="reconnectName"></strong>!</div>
+    <div class="reconnect-btns">
+      <button class="btn btn-ghost btn-sm" onclick="clearSession()">New Game</button>
+      <button class="btn btn-success btn-sm" onclick="doReconnect()">Rejoin</button>
+    </div>
+  </div>
+
+  <div class="join-card" id="joinCard">
+    <div class="join-card-title">Join the Game</div>
+    <label for="roomCodeInput">Room Code</label>
+    <input type="text" id="roomCodeInput" placeholder="ABC123" maxlength="6" autocomplete="off" autocorrect="off" spellcheck="false">
+    <label for="playerNameInput">Your Name</label>
+    <input type="text" id="playerNameInput" placeholder="How people know you" autocomplete="off">
+    <div class="err" id="joinErr"></div>
+    <button class="btn btn-primary" onclick="joinGame()">Join Game</button>
+  </div>
+</div>
+
+<!-- ══ GAME SCREEN ══ -->
+<div class="screen" id="gameScreen">
+  <div class="game-topbar">
+    <div class="topbar-left">
+      <div class="topbar-logo"><img src="/logo.jpg" alt="SEC"></div>
+      <div class="topbar-title">SECURICON 11</div>
+    </div>
+    <div class="topbar-player">Playing as <strong id="topbarName">—</strong></div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-row">
+      <div class="progress-count"><span id="filledCount">1</span> / 25</div>
+      <div class="progress-pct" id="progressPct">4%</div>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill" style="width:4%"></div>
+    </div>
+  </div>
+
+  <div class="grid-wrap">
+    <div class="bingo-grid" id="bingoGrid"></div>
+  </div>
+
+  <div class="lb-wrap">
+    <div class="lb-header">Leaderboard</div>
+    <div id="lbList"></div>
+  </div>
+</div>
+
+</div><!-- /#app -->
+
+<!-- ══ MARK SHEET ══ -->
+<div class="overlay hidden" id="markOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Mark this square</div>
+    <div class="sheet-activity" id="markActivityText"></div>
+    <label for="confirmNameInput">Name of the person who matches this</label>
+    <input type="text" id="confirmNameInput" placeholder="Their exact name" autocomplete="off">
+    <div class="err" id="markErr"></div>
+    <div class="sheet-btns">
+      <button class="btn btn-ghost btn-sm" onclick="closeMarkSheet()">Cancel</button>
+      <button class="btn btn-primary btn-sm" onclick="submitMark()">Send Request</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ INCOMING REQUEST SHEET ══ -->
+<div class="overlay hidden" id="requestOverlay">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Confirmation Request</div>
+    <div class="req-from"><strong id="reqFromName"></strong> wants you to confirm they match:</div>
+    <div class="req-activity-box" id="reqActivityText"></div>
+    <div class="req-confirm-count" id="reqConfirmCount"></div>
+    <div class="sheet-btns">
+      <button class="btn btn-deny btn-sm" onclick="respondRequest(false)">Deny</button>
+      <button class="btn btn-success btn-sm" onclick="respondRequest(true)">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ WIN ══ -->
+<div class="win-screen hidden" id="winScreen">
+  <div class="win-icon">&#127942;</div>
+  <div class="win-title">BINGO!</div>
+  <div class="win-name" id="winnerName"></div>
+  <div class="win-sub">completed the full board!</div>
+  <button class="btn btn-ghost" style="max-width:200px" onclick="closeWin()">Close</button>
+</div>
+
+<!-- ══ TOAST ══ -->
+<div class="toast hidden" id="toast"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+
+let myCard = [];
+let myFilled = new Set();
+let myName = '';
+let myRoom = '';
+let pendingCellIndex = null;
+let waitingCells = new Set();
+let currentPendingKey = null;
+
+// ── Session Storage ──────────────────────────────────────────────────────────
+function saveSession(code, name) {
+  sessionStorage.setItem('bingo_code', code);
+  sessionStorage.setItem('bingo_name', name);
+}
+function clearSession() {
+  sessionStorage.removeItem('bingo_code');
+  sessionStorage.removeItem('bingo_name');
+  document.getElementById('reconnectBanner').style.display = 'none';
+  document.getElementById('joinCard').style.display = 'block';
+}
+function getSession() {
+  const code = sessionStorage.getItem('bingo_code');
+  const name = sessionStorage.getItem('bingo_name');
+  return (code && name) ? { code, name } : null;
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+let toastTimer;
+function toast(msg, duration = 4000) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.remove('hidden');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.add('hidden'), duration);
+}
+
+function showErr(id, msg) { const el = document.getElementById(id); el.textContent = msg; el.classList.add('show'); }
+function clearErr(id) { document.getElementById(id).classList.remove('show'); }
+
+// ── On load: check for existing session ─────────────────────────────────────
+window.addEventListener('load', () => {
+  const session = getSession();
+  if (session) {
+    document.getElementById('reconnectName').textContent = session.name;
+    document.getElementById('reconnectBanner').style.display = 'block';
+    document.getElementById('joinCard').style.display = 'none';
+  }
+});
+
+function doReconnect() {
+  const session = getSession();
+  if (!session) return;
+  socket.emit('player_reconnect', { code: session.code, name: session.name }, (res) => {
+    if (res.error) {
+      toast('Could not rejoin: ' + res.error);
+      clearSession();
+      document.getElementById('joinCard').style.display = 'block';
+      return;
+    }
+    myName = session.name;
+    myRoom = session.code;
+    myCard = res.card;
+    myFilled = new Set(res.filledIndices);
+    document.getElementById('topbarName').textContent = myName;
+    renderGrid();
+    updateProgress();
+    socket.emit('get_leaderboard');
+    if (res.winner) {
+      document.getElementById('winnerName').textContent = res.winner;
+      document.getElementById('winScreen').classList.remove('hidden');
+    }
+    showScreen('gameScreen');
+    toast('Reconnected successfully!');
+  });
+}
+
+// ── Join ─────────────────────────────────────────────────────────────────────
+function joinGame() {
+  const code = document.getElementById('roomCodeInput').value.trim().toUpperCase();
+  const name = document.getElementById('playerNameInput').value.trim();
+  clearErr('joinErr');
+  if (code.length < 4) return showErr('joinErr', 'Enter a valid room code.');
+  if (!name) return showErr('joinErr', 'Enter your name.');
+
+  socket.emit('join_room', { code, name }, (res) => {
+    if (res.error) return showErr('joinErr', res.error);
+    myName = name;
+    myRoom = code;
+    myCard = res.card;
+    myFilled = new Set(res.filledIndices);
+    saveSession(code, name);
+    document.getElementById('topbarName').textContent = name;
+    renderGrid();
+    updateProgress();
+    socket.emit('get_leaderboard');
+    showScreen('gameScreen');
+  });
+}
+
+document.getElementById('roomCodeInput').addEventListener('input', e => {
+  const sel = e.target.selectionStart;
+  e.target.value = e.target.value.toUpperCase();
+  e.target.setSelectionRange(sel, sel);
+});
+document.getElementById('playerNameInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') joinGame();
+});
+
+// ── Grid ─────────────────────────────────────────────────────────────────────
+function renderGrid() {
+  const grid = document.getElementById('bingoGrid');
+  grid.innerHTML = '';
+  myCard.forEach((act, i) => {
+    const isFree = act.id === 24;
+    const isFilled = myFilled.has(i);
+    const isWaiting = waitingCells.has(i);
+    let cls = 'cell';
+    if (isFree) cls += ' cell-free';
+    else if (isFilled) cls += ' cell-filled';
+    else if (isWaiting) cls += ' cell-waiting';
+
+    const cell = document.createElement('div');
+    cell.className = cls;
+    cell.innerHTML = `<span class="cell-text">${act.text}</span>`;
+    if (!isFree && !isFilled && !isWaiting) {
+      cell.addEventListener('click', () => openMarkSheet(i, act));
+    }
+    grid.appendChild(cell);
+  });
+}
+
+function updateProgress() {
+  const n = myFilled.size;
+  const pct = Math.round((n / 25) * 100);
+  document.getElementById('filledCount').textContent = n;
+  document.getElementById('progressPct').textContent = pct + '%';
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+// ── Mark Sheet ───────────────────────────────────────────────────────────────
+function openMarkSheet(index, act) {
+  pendingCellIndex = index;
+  document.getElementById('markActivityText').textContent = act.text;
+  document.getElementById('confirmNameInput').value = '';
+  clearErr('markErr');
+  document.getElementById('markOverlay').classList.remove('hidden');
+  setTimeout(() => document.getElementById('confirmNameInput').focus(), 150);
+}
+function closeMarkSheet() {
+  document.getElementById('markOverlay').classList.add('hidden');
+  pendingCellIndex = null;
+}
+function submitMark() {
+  const confirmedByName = document.getElementById('confirmNameInput').value.trim();
+  clearErr('markErr');
+  if (!confirmedByName) return showErr('markErr', 'Enter the name of the person.');
+  socket.emit('request_confirm', { index: pendingCellIndex, confirmedByName }, (res) => {
+    if (res.error) return showErr('markErr', res.error);
+    if (res.alreadyFilled) { closeMarkSheet(); return; }
+    waitingCells.add(pendingCellIndex);
+    renderGrid();
+    closeMarkSheet();
+    toast('Request sent — waiting for ' + confirmedByName + ' to confirm on their phone.');
+  });
+}
+document.getElementById('confirmNameInput').addEventListener('keydown', e => { if (e.key === 'Enter') submitMark(); });
+document.getElementById('markOverlay').addEventListener('click', e => { if (e.target === document.getElementById('markOverlay')) closeMarkSheet(); });
+
+// ── Incoming Request ─────────────────────────────────────────────────────────
+socket.on('confirm_request', ({ pendingKey, requesterName, activityText, alreadyConfirmedCount, limit }) => {
+  currentPendingKey = pendingKey;
+  document.getElementById('reqFromName').textContent = requesterName;
+  document.getElementById('reqActivityText').textContent = activityText;
+  const remaining = limit - alreadyConfirmedCount;
+  document.getElementById('reqConfirmCount').textContent =
+    `You have confirmed ${alreadyConfirmedCount} of ${limit} allowed squares for ${requesterName}. ${remaining} remaining after this.`;
+  document.getElementById('requestOverlay').classList.remove('hidden');
+});
+
+function respondRequest(accepted) {
+  socket.emit('confirm_response', { pendingKey: currentPendingKey, accepted });
+  document.getElementById('requestOverlay').classList.add('hidden');
+  currentPendingKey = null;
+  toast(accepted ? 'You confirmed the match!' : 'You denied the request.');
+}
+
+// ── Server Events ─────────────────────────────────────────────────────────────
+socket.on('square_confirmed', ({ index, filled, confirmedBy }) => {
+  myFilled = new Set(filled);
+  waitingCells.delete(index);
+  renderGrid();
+  updateProgress();
+  toast('Square confirmed by ' + confirmedBy + '!');
+});
+
+socket.on('confirm_denied', ({ index, activityText, deniedBy }) => {
+  waitingCells.delete(index);
+  renderGrid();
+  toast(deniedBy + ' denied: "' + activityText + '"');
+});
+
+socket.on('confirm_expired', ({ index }) => {
+  waitingCells.delete(index);
+  renderGrid();
+  toast('A confirmation request timed out.');
+});
+
+socket.on('game_won', ({ winner }) => {
+  document.getElementById('winnerName').textContent = winner;
+  document.getElementById('winScreen').classList.remove('hidden');
+});
+
+socket.on('new_card', ({ card, filledIndices }) => {
+  myCard = card;
+  myFilled = new Set(filledIndices);
+  waitingCells.clear();
+  renderGrid();
+  updateProgress();
+  toast('New game started — cards reshuffled!');
+});
+
+socket.on('game_reset', () => {
+  document.getElementById('winScreen').classList.add('hidden');
+});
+
+socket.on('leaderboard', (data) => {
+  const el = document.getElementById('lbList');
+  if (!data.length) { el.innerHTML = '<div style="color:var(--muted);font-size:14px">Waiting for players...</div>'; return; }
+  el.innerHTML = data.slice(0, 10).map((p, i) => `
+    <div class="lb-row">
+      <div class="lb-rank">#${i+1}</div>
+      <div class="lb-name ${p.name === myName ? 'me' : ''} ${p.done ? 'done-name' : ''}">${p.name}${p.done ? ' ✓' : ''}</div>
+      <div class="lb-bar-track"><div class="lb-bar-fill" style="width:${Math.round((p.filled/25)*100)}%"></div></div>
+      <div class="lb-score">${p.filled}/25</div>
+    </div>
+  `).join('');
+});
+
+// ── Socket reconnect (network drop, not page refresh) ────────────────────────
+socket.on('connect', () => {
+  // If we already have a session active in-game, auto-rejoin after network drop
+  if (myName && myRoom) {
+    socket.emit('player_reconnect', { code: myRoom, name: myName }, (res) => {
+      if (res && res.ok) toast('Reconnected.');
+    });
+  }
+});
+
+function closeWin() { document.getElementById('winScreen').classList.add('hidden'); }
+</script>
+</body>
+</html>

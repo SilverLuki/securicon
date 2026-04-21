@@ -59,7 +59,7 @@ const ACTIVITIES = [
   { id: 20, text: "Sleeps after 2am regularly" },
   { id: 21, text: "Has a startup idea written down" },
   { id: 22, text: "Met someone from another university today" },
-  { id: 23, text: "FREE SPACE" },
+  { id: 23, text: "3andou pc LENOVO" },
   { id: 24, text: "3andou pc MSI" },
   { id: 25, text: "3andou chache fih barcha alwan" },
   { id: 26, text: "hal CTF task 3al 1000pt" },
